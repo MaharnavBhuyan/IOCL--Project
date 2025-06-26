@@ -10,43 +10,51 @@ interface LiveVideoFeedProps {
 }
 
 const LiveVideoFeed: React.FC<LiveVideoFeedProps> = ({ isMonitoring }) => {
-  const videoRef = useRef<HTMLImageElement>(null);
+  const imgRef = useRef<HTMLImageElement>(null);
   const [isStreaming, setIsStreaming] = useState(false);
   const [detectionCount, setDetectionCount] = useState(0);
+  const [streamUrl] = useState('http://localhost:8000/live'); // Your FastAPI endpoint
 
   useEffect(() => {
-    if (isMonitoring && videoRef.current) {
-      // In a real implementation, this would connect to your FastAPI /live endpoint
-      // For demo purposes, we'll simulate a video feed
-      videoRef.current.src = "data:image/svg+xml;base64," + btoa(`
-        <svg width="640" height="480" xmlns="http://www.w3.org/2000/svg">
-          <rect width="100%" height="100%" fill="#1f2937"/>
-          <text x="50%" y="50%" text-anchor="middle" fill="#9CA3AF" font-size="24" font-family="Arial">
-            Live Video Feed
-          </text>
-          <text x="50%" y="60%" text-anchor="middle" fill="#6B7280" font-size="16" font-family="Arial">
-            ${isMonitoring ? 'Monitoring Active' : 'Click Start Monitoring'}
-          </text>
-          <circle cx="320" cy="200" r="5" fill="${isMonitoring ? '#10B981' : '#6B7280'}">
-            ${isMonitoring ? '<animate attributeName="opacity" values="1;0.3;1" dur="2s" repeatCount="indefinite"/>' : ''}
-          </circle>
-        </svg>
-      `);
-      setIsStreaming(true);
+    if (isMonitoring && imgRef.current) {
+      // Connect to FastAPI live stream
+      imgRef.current.src = streamUrl;
+      imgRef.current.onload = () => {
+        setIsStreaming(true);
+        console.log('Live stream connected successfully');
+      };
+      imgRef.current.onerror = () => {
+        setIsStreaming(false);
+        console.error('Failed to connect to live stream. Make sure FastAPI server is running on http://localhost:8000');
+      };
     } else {
       setIsStreaming(false);
+      if (imgRef.current) {
+        imgRef.current.src = '';
+      }
     }
-  }, [isMonitoring]);
+  }, [isMonitoring, streamUrl]);
 
-  // Simulate detection updates
+  // Simulate detection updates when streaming
   useEffect(() => {
-    if (isMonitoring) {
+    if (isMonitoring && isStreaming) {
       const interval = setInterval(() => {
         setDetectionCount(prev => prev + Math.floor(Math.random() * 3));
       }, 5000);
       return () => clearInterval(interval);
     }
-  }, [isMonitoring]);
+  }, [isMonitoring, isStreaming]);
+
+  const handleResetStream = () => {
+    if (imgRef.current) {
+      imgRef.current.src = '';
+      setTimeout(() => {
+        if (imgRef.current && isMonitoring) {
+          imgRef.current.src = streamUrl;
+        }
+      }, 100);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -73,10 +81,26 @@ const LiveVideoFeed: React.FC<LiveVideoFeedProps> = ({ isMonitoring }) => {
         <CardContent className="space-y-4">
           <div className="relative bg-gray-900 rounded-lg overflow-hidden aspect-video">
             <img
-              ref={videoRef}
+              ref={imgRef}
               className="w-full h-full object-cover"
               alt="Live video feed"
+              style={{ display: isStreaming ? 'block' : 'none' }}
             />
+            {!isStreaming && (
+              <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                <div className="text-center text-white">
+                  <Play className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                  <p className="text-lg">
+                    {isMonitoring ? 'Connecting to webcam...' : 'Start monitoring to view live feed'}
+                  </p>
+                  {isMonitoring && (
+                    <p className="text-sm mt-2 opacity-75">
+                      Make sure FastAPI server is running on localhost:8000
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
             {isStreaming && (
               <div className="absolute top-4 left-4 space-y-2">
                 <Badge className="bg-red-500/90 text-white">
@@ -84,14 +108,6 @@ const LiveVideoFeed: React.FC<LiveVideoFeedProps> = ({ isMonitoring }) => {
                 </Badge>
                 <div className="text-white text-sm bg-black/50 px-2 py-1 rounded">
                   {new Date().toLocaleTimeString()}
-                </div>
-              </div>
-            )}
-            {!isMonitoring && (
-              <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                <div className="text-center text-white">
-                  <Play className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                  <p className="text-lg">Start monitoring to view live feed</p>
                 </div>
               </div>
             )}
@@ -121,7 +137,7 @@ const LiveVideoFeed: React.FC<LiveVideoFeedProps> = ({ isMonitoring }) => {
           </div>
 
           <div className="flex justify-center space-x-4">
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={handleResetStream}>
               <RotateCcw className="w-4 h-4 mr-2" />
               Reset Stream
             </Button>
@@ -131,19 +147,26 @@ const LiveVideoFeed: React.FC<LiveVideoFeedProps> = ({ isMonitoring }) => {
 
       <Card className="bg-white/70 backdrop-blur-sm border-0 shadow-xl">
         <CardHeader>
-          <CardTitle>Integration Instructions</CardTitle>
+          <CardTitle>Connection Status</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="bg-gray-100 p-4 rounded-lg">
-            <h4 className="font-semibold mb-2">Connect to FastAPI Backend:</h4>
+            <h4 className="font-semibold mb-2">FastAPI Endpoint:</h4>
             <code className="text-sm">
-              http://your-fastapi-server:8000/live
+              {streamUrl}
             </code>
           </div>
-          <p className="text-sm text-gray-600">
-            Replace the simulated feed above with a real video stream from your FastAPI backend. 
-            The stream endpoint should return multipart/x-mixed-replace content type with JPEG frames.
-          </p>
+          <div className="text-sm text-gray-600">
+            <p className="mb-2">
+              <strong>To see the webcam feed:</strong>
+            </p>
+            <ol className="list-decimal list-inside space-y-1">
+              <li>Make sure your FastAPI server is running with: <code>python your_script.py</code></li>
+              <li>Ensure your webcam is connected and accessible</li>
+              <li>Click "Start Monitoring" above</li>
+              <li>The live feed will appear once connected</li>
+            </ol>
+          </div>
         </CardContent>
       </Card>
     </div>
