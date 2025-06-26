@@ -1,39 +1,55 @@
-# Guardian Vision Track
+# 🛡️ ProtectiFy: Real-Time PPE Compliance Monitoring System
 
-## Project Info
+**ProtectiFy** is a full-stack AI-powered system designed to monitor and enforce Personal Protective Equipment (PPE) compliance—specifically helmet usage—in real-time using live surveillance feeds and deep learning. Built with modern frontend and backend technologies, it delivers intelligent alerts, visual logs, and insightful dashboards for industrial safety supervisors.
 
-A computer vision project for real-time monitoring and compliance tracking.
+---
 
-## How can I edit this code?
+## 🚀 Tech Stack
 
-You can work locally using your preferred IDE:
+### 🌐 Frontend
+- **React** – Declarative, component-based UI  
+- **TypeScript** – Type-safe JavaScript for robust development  
+- **Vite** – Ultra-fast dev server and bundler  
+- **Tailwind CSS** – Utility-first CSS for sleek styling  
+- **shadcn/ui** – Modern, accessible UI components  
+- **Recharts** – Interactive data visualization  
+- **Lucide React** – Consistent and elegant icon set  
+- **React Router DOM** – Dynamic client-side routing  
+- **TanStack React Query** – Efficient server state and caching management  
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+### 🧠 Backend
+- **FastAPI** – High-performance Python web framework  
+- **OpenCV** – Real-time computer vision for video processing  
+- **YOLO (Ultralytics)** – Deep learning model for object detection  
+- **PyTorch** – Framework for training and deploying YOLO models  
+- **Uvicorn** – ASGI server for serving the FastAPI app  
 
-# Step 2: Navigate to the project directory.
-cd guardian-vision-track
+---
 
-# Step 3: Install the necessary dependencies.
-npm install
+## 🔍 About ProtectiFy
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+ProtectiFy leverages the **YOLO object detection algorithm** to analyze live video feeds from surveillance cameras and ensure workers wear the required safety gear (like helmets).
 
-## What technologies are used for this project?
+### ✅ Features:
+- Real-time helmet detection via CCTV streams  
+- Automatic logging of violations with timestamps and snapshots  
+- Real-time alerts for non-compliance  
+- Trends and analytics by time, shift, and location  
+- Data-driven reports to support safety interventions  
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+---
 
-## How can I deploy this project?
+## 📊 Supervisor Dashboard
 
-You can deploy this project using your preferred hosting provider (e.g., Vercel, Netlify, GitHub Pages, etc.).
+Supervisors can access a powerful and intuitive dashboard that provides:
 
-## Custom Domain
+- 📈 PPE compliance metrics and trend analytics  
+- 🧑‍🏭 Worker activity logs and violation breakdowns  
+- 📍 Area/Shift-wise violation heatmaps  
+- 🔔 Instant alerts for safety breaches  
+- 📂 Downloadable reports for audits and inspections  
 
-To connect a custom domain, follow the instructions provided by your hosting provider.
+These insights empower organizations like **Indian Oil** to proactively address safety issues and uphold compliance with safety standards.
+
+---
+
