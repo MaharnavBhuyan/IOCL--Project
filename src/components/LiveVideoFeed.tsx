@@ -1,9 +1,8 @@
-
 import React, { useRef, useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Camera, Play, Pause, RotateCcw } from "lucide-react";
+import { Camera, Play, Pause, RotateCcw, AlertCircle } from "lucide-react";
 
 interface LiveVideoFeedProps {
   isMonitoring: boolean;
@@ -13,27 +12,46 @@ const LiveVideoFeed: React.FC<LiveVideoFeedProps> = ({ isMonitoring }) => {
   const imgRef = useRef<HTMLImageElement>(null);
   const [isStreaming, setIsStreaming] = useState(false);
   const [detectionCount, setDetectionCount] = useState(0);
-  const [streamUrl] = useState('http://localhost:8000/live'); // Your FastAPI endpoint
+  const [connectionError, setConnectionError] = useState<string | null>(null);
+  const [streamUrl] = useState('http://localhost:8000/live');
 
   useEffect(() => {
     if (isMonitoring && imgRef.current) {
-      // Connect to FastAPI live stream
+      console.log('Attempting to connect to FastAPI stream...');
+      setConnectionError(null);
+      
+      // Set up the image source
       imgRef.current.src = streamUrl;
+      
       imgRef.current.onload = () => {
         setIsStreaming(true);
+        setConnectionError(null);
         console.log('Live stream connected successfully');
       };
-      imgRef.current.onerror = () => {
+      
+      imgRef.current.onerror = (error) => {
         setIsStreaming(false);
-        console.error('Failed to connect to live stream. Make sure FastAPI server is running on http://localhost:8000');
+        const errorMsg = 'Failed to connect to FastAPI server. Make sure it\'s running on http://localhost:8000';
+        setConnectionError(errorMsg);
+        console.error(errorMsg, error);
       };
+
+      // Add a timeout to detect if the stream doesn't load
+      const timeout = setTimeout(() => {
+        if (!isStreaming) {
+          setConnectionError('Connection timeout. Please check if your FastAPI server is running.');
+        }
+      }, 5000);
+
+      return () => clearTimeout(timeout);
     } else {
       setIsStreaming(false);
+      setConnectionError(null);
       if (imgRef.current) {
         imgRef.current.src = '';
       }
     }
-  }, [isMonitoring, streamUrl]);
+  }, [isMonitoring, streamUrl, isStreaming]);
 
   // Simulate detection updates when streaming
   useEffect(() => {
@@ -46,13 +64,32 @@ const LiveVideoFeed: React.FC<LiveVideoFeedProps> = ({ isMonitoring }) => {
   }, [isMonitoring, isStreaming]);
 
   const handleResetStream = () => {
+    console.log('Resetting stream connection...');
+    setConnectionError(null);
     if (imgRef.current) {
       imgRef.current.src = '';
       setTimeout(() => {
         if (imgRef.current && isMonitoring) {
           imgRef.current.src = streamUrl;
         }
-      }, 100);
+      }, 500);
+    }
+  };
+
+  const testConnection = async () => {
+    try {
+      console.log('Testing FastAPI connection...');
+      const response = await fetch('http://localhost:8000/', { method: 'GET' });
+      if (response.ok) {
+        const data = await response.text();
+        console.log('FastAPI server is running:', data);
+        setConnectionError(null);
+      } else {
+        setConnectionError('FastAPI server responded with error');
+      }
+    } catch (error) {
+      console.error('FastAPI connection test failed:', error);
+      setConnectionError('Cannot connect to FastAPI server. Make sure it\'s running on http://localhost:8000');
     }
   };
 
@@ -79,6 +116,16 @@ const LiveVideoFeed: React.FC<LiveVideoFeedProps> = ({ isMonitoring }) => {
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
+          {connectionError && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start space-x-3">
+              <AlertCircle className="w-5 h-5 text-red-500 mt-0.5" />
+              <div>
+                <p className="text-red-800 font-medium">Connection Error</p>
+                <p className="text-red-600 text-sm mt-1">{connectionError}</p>
+              </div>
+            </div>
+          )}
+
           <div className="relative bg-gray-900 rounded-lg overflow-hidden aspect-video">
             <img
               ref={imgRef}
@@ -94,9 +141,10 @@ const LiveVideoFeed: React.FC<LiveVideoFeedProps> = ({ isMonitoring }) => {
                     {isMonitoring ? 'Connecting to webcam...' : 'Start monitoring to view live feed'}
                   </p>
                   {isMonitoring && (
-                    <p className="text-sm mt-2 opacity-75">
-                      Make sure FastAPI server is running on localhost:8000
-                    </p>
+                    <div className="text-sm mt-2 opacity-75 space-y-1">
+                      <p>Make sure your FastAPI server is running</p>
+                      <p className="text-xs">Run: <code>python your_fastapi_script.py</code></p>
+                    </div>
                   )}
                 </div>
               </div>
@@ -141,31 +189,44 @@ const LiveVideoFeed: React.FC<LiveVideoFeedProps> = ({ isMonitoring }) => {
               <RotateCcw className="w-4 h-4 mr-2" />
               Reset Stream
             </Button>
+            <Button variant="outline" size="sm" onClick={testConnection}>
+              <Camera className="w-4 h-4 mr-2" />
+              Test Backend
+            </Button>
           </div>
         </CardContent>
       </Card>
 
       <Card className="bg-white/70 backdrop-blur-sm border-0 shadow-xl">
         <CardHeader>
-          <CardTitle>Connection Status</CardTitle>
+          <CardTitle>Backend Setup Instructions</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="bg-gray-100 p-4 rounded-lg">
             <h4 className="font-semibold mb-2">FastAPI Endpoint:</h4>
-            <code className="text-sm">
-              {streamUrl}
-            </code>
+            <code className="text-sm">{streamUrl}</code>
           </div>
+          
           <div className="text-sm text-gray-600">
-            <p className="mb-2">
-              <strong>To see the webcam feed:</strong>
-            </p>
-            <ol className="list-decimal list-inside space-y-1">
-              <li>Make sure your FastAPI server is running with: <code>python your_script.py</code></li>
-              <li>Ensure your webcam is connected and accessible</li>
+            <p className="mb-3"><strong>To enable the webcam feed:</strong></p>
+            <ol className="list-decimal list-inside space-y-2">
+              <li>Save your FastAPI script (the Python code you provided)</li>
+              <li>Install required packages: <code className="bg-gray-200 px-1 rounded">pip install fastapi uvicorn opencv-python ultralytics torch</code></li>
+              <li>Make sure you have your <code className="bg-gray-200 px-1 rounded">best.pt</code> YOLO model file</li>
+              <li>Run the server: <code className="bg-gray-200 px-1 rounded">python your_script.py</code></li>
               <li>Click "Start Monitoring" above</li>
-              <li>The live feed will appear once connected</li>
+              <li>If you still have issues, click "Test Backend" to check the connection</li>
             </ol>
+          </div>
+
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <p className="text-yellow-800 font-medium mb-2">Common Issues:</p>
+            <ul className="text-yellow-700 text-sm space-y-1">
+              <li>• FastAPI server not running</li>
+              <li>• CORS issues (add CORS middleware to your FastAPI app)</li>
+              <li>• Webcam not accessible or in use by another application</li>
+              <li>• Missing YOLO model file (best.pt)</li>
+            </ul>
           </div>
         </CardContent>
       </Card>
