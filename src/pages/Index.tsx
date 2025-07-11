@@ -42,10 +42,10 @@ const Index = () => {
         setDetections(formattedDetections);
         
         // Update stats - fix the arithmetic operation error by ensuring all values are numbers
-        const fireCount = Number(formattedDetections.filter(d => d.model === "FireSmoke" && d.violationType === "fire").length);
-        const smokeCount = Number(formattedDetections.filter(d => d.model === "FireSmoke" && d.violationType === "smoke").length);
-        const ppeCount = Number(formattedDetections.filter(d => d.model === "PPE").length);
-        const totalCount = Number(formattedDetections.length);
+        const fireCount = formattedDetections.filter(d => d.model === "FireSmoke" && d.violationType === "fire").length;
+        const smokeCount = formattedDetections.filter(d => d.model === "FireSmoke" && d.violationType === "smoke").length;
+        const ppeCount = formattedDetections.filter(d => d.model === "PPE").length;
+        const totalCount = formattedDetections.length;
         
         setStats(prev => ({
           ...prev,
@@ -53,7 +53,7 @@ const Index = () => {
           fireDetections: fireCount,
           smokeDetections: smokeCount,
           ppeViolations: ppeCount,
-          complianceRate: Math.max(70, Number(100) - (totalCount * Number(2)))
+          complianceRate: Math.max(70, 100 - (totalCount * 2))
         }));
       }
     } catch (error) {
@@ -88,7 +88,7 @@ const Index = () => {
       if (isRecent && isMonitoring) {
         // Play browser audio alert
         try {
-          const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMTBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwTBDyP2fTNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwTBDyP2fTNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwTBDyP2fTNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwTBDyP2fTNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwTBDyP2fTNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwTBDyP2fTNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwTBDyP2fTNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwTBDyP2fTNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwTBDyP2fTNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwTBDyP2fTNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwTBDyP2fTNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwTBDyP2fTNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwTBDyP2fTNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwTBDyP2fTNeSsFJHfH8N2QQCgBAA==');
+          const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMTBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwTBDyP2fTNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwTBDyP2fTNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwTBDyP2fTNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwTBDyP2fTNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwTBDyP2fTNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwTBDyP2fTNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwTBDyP2fTNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwTBDyP2fTNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwTBDyP2fTNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwTBDyP2fTNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwTBDyP2fTNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwTBDyP2fTNeSsFJHfH8N2QQCgBAA==');
           audio.volume = 0.3;
           audio.play().catch(e => console.log('Audio play failed:', e));
         } catch (e) {
