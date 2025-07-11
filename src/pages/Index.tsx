@@ -42,18 +42,19 @@ const Index = () => {
         
         setDetections(formattedDetections);
         
-        // Update stats
+        // Update stats - fix the arithmetic operation error
         const fireCount = formattedDetections.filter(d => d.model === "FireSmoke" && d.violationType === "fire").length;
         const smokeCount = formattedDetections.filter(d => d.model === "FireSmoke" && d.violationType === "smoke").length;
         const ppeCount = formattedDetections.filter(d => d.model === "PPE").length;
+        const totalCount = formattedDetections.length;
         
         setStats(prev => ({
           ...prev,
-          totalDetections: formattedDetections.length,
+          totalDetections: totalCount,
           fireDetections: fireCount,
           smokeDetections: smokeCount,
           ppeViolations: ppeCount,
-          complianceRate: Math.max(70, 100 - (formattedDetections.length * 2))
+          complianceRate: Math.max(70, 100 - (totalCount * 2))
         }));
       }
     } catch (error) {
