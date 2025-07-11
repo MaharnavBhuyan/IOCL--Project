@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -54,7 +53,7 @@ const Index = () => {
           fireDetections: fireCount,
           smokeDetections: smokeCount,
           ppeViolations: ppeCount,
-          complianceRate: Math.max(70, 100 - (totalCount * 2))
+          complianceRate: Math.max(70, Number(100) - (totalCount * Number(2)))
         }));
       }
     } catch (error) {
