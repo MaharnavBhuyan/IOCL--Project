@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AlertTriangle, Shield, Camera, TrendingUp, Users, Clock } from "lucide-react";
+import { AlertTriangle, Shield, Camera, TrendingUp, Users, Clock, Flame } from "lucide-react";
 import LiveVideoFeed from "@/components/LiveVideoFeed";
 import ViolationChart from "@/components/ViolationChart";
 import ComplianceMetrics from "@/components/ComplianceMetrics";
@@ -12,57 +12,106 @@ import ViolationLogs from "@/components/ViolationLogs";
 import { useToast } from "@/hooks/use-toast";
 
 const Index = () => {
-  const [violations, setViolations] = useState([]);
+  const [detections, setDetections] = useState([]);
   const [isMonitoring, setIsMonitoring] = useState(false);
   const [stats, setStats] = useState({
-    totalViolations: 0,
-    helmetsViolations: 0,
-    vestsViolations: 0,
+    totalDetections: 0,
+    fireDetections: 0,
+    smokeDetections: 0,
+    ppeViolations: 0,
     complianceRate: 95.2
   });
   const { toast } = useToast();
 
-  // Simulate real-time data updates
-  useEffect(() => {
-    const interval = setInterval(() => {
-      // Simulate new violation data
-      const violationTypes = ["no_helmet", "no_vest", "no_shoes", "no_gloves"];
-      const randomViolation = violationTypes[Math.floor(Math.random() * violationTypes.length)];
-      
-      if (Math.random() < 0.1 && isMonitoring) { // 10% chance of violation
-        const newViolation = {
-          id: Date.now(),
-          timestamp: new Date().toISOString(),
-          violationType: randomViolation,
+  // Fetch detection data from backend
+  const fetchDetections = async () => {
+    try {
+      const response = await fetch('http://localhost:8000/detections');
+      if (response.ok) {
+        const data = await response.json();
+        const formattedDetections = data.detections?.map(detection => ({
+          id: Date.now() + Math.random(),
+          timestamp: detection.Time,
+          violationType: detection.Class,
+          model: detection.Model,
           location: "Production Unit A",
-          severity: Math.random() > 0.7 ? "high" : "medium"
-        };
+          severity: detection.Model === "FireSmoke" ? "high" : "medium",
+          confidence: detection.Confidence,
+          snapshot: detection.Snapshot
+        })) || [];
         
-        setViolations(prev => [newViolation, ...prev.slice(0, 49)]);
+        setDetections(formattedDetections);
+        
+        // Update stats
+        const fireCount = formattedDetections.filter(d => d.model === "FireSmoke" && d.violationType === "fire").length;
+        const smokeCount = formattedDetections.filter(d => d.model === "FireSmoke" && d.violationType === "smoke").length;
+        const ppeCount = formattedDetections.filter(d => d.model === "PPE").length;
+        
         setStats(prev => ({
           ...prev,
-          totalViolations: prev.totalViolations + 1,
-          helmetsViolations: randomViolation === "no_helmet" ? prev.helmetsViolations + 1 : prev.helmetsViolations,
-          vestsViolations: randomViolation === "no_vest" ? prev.vestsViolations + 1 : prev.vestsViolations,
-          complianceRate: Math.max(85, prev.complianceRate - 0.1)
+          totalDetections: formattedDetections.length,
+          fireDetections: fireCount,
+          smokeDetections: smokeCount,
+          ppeViolations: ppeCount,
+          complianceRate: Math.max(70, 100 - (formattedDetections.length * 2))
         }));
+      }
+    } catch (error) {
+      console.error('Failed to fetch detections:', error);
+    }
+  };
 
+  // Simulate real-time data updates and sound alerts
+  useEffect(() => {
+    let interval;
+    if (isMonitoring) {
+      // Fetch initial data
+      fetchDetections();
+      
+      // Set up polling for new detections
+      interval = setInterval(() => {
+        fetchDetections();
+      }, 5000);
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isMonitoring]);
+
+  // Handle new detection notifications
+  useEffect(() => {
+    if (detections.length > 0) {
+      const latestDetection = detections[0];
+      const isRecent = new Date() - new Date(latestDetection.timestamp) < 10000; // Within 10 seconds
+      
+      if (isRecent && isMonitoring) {
+        // Play browser audio alert
+        try {
+          const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMTBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwTBDyP2fTNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwTBDyP2fTNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwTBDyP2fTNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwTBDyP2fTNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwTBDyP2fTNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwTBDyP2fTNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwTBDyP2fTNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwTBDyP2fTNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwTBDyP2fTNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwTBDyP2fTNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwTBDyP2fTNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwTBDyP2fTNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwTBDyP2fTNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwTBDyP2fTNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwTBDyP2fTNeSsFJHfH8N2QQCgBAA==');
+          audio.volume = 0.3;
+          audio.play().catch(e => console.log('Audio play failed:', e));
+        } catch (e) {
+          console.log('Browser audio not supported:', e);
+        }
+
+        const detectionType = latestDetection.model === "FireSmoke" ? "Fire/Smoke" : "PPE Violation";
+        const icon = latestDetection.model === "FireSmoke" ? "🔥" : "⚠️";
+        
         toast({
-          title: "PPE Violation Detected",
-          description: `${randomViolation.replace('_', ' ').toUpperCase()} violation detected at ${new Date().toLocaleTimeString()}`,
-          variant: "destructive",
+          title: `${icon} ${detectionType} Detected`,
+          description: `${latestDetection.violationType} detected with ${(latestDetection.confidence * 100).toFixed(1)}% confidence at ${new Date(latestDetection.timestamp).toLocaleTimeString()}`,
+          variant: latestDetection.model === "FireSmoke" ? "destructive" : "destructive",
         });
       }
-    }, 3000);
-
-    return () => clearInterval(interval);
-  }, [isMonitoring, toast]);
+    }
+  }, [detections, isMonitoring, toast]);
 
   const startMonitoring = () => {
     setIsMonitoring(true);
     toast({
       title: "Monitoring Started",
-      description: "PPE detection system is now active",
+      description: "Fire/Smoke & PPE detection system is now active",
     });
   };
 
@@ -70,7 +119,7 @@ const Index = () => {
     setIsMonitoring(false);
     toast({
       title: "Monitoring Stopped",
-      description: "PPE detection system has been paused",
+      description: "Detection system has been paused",
     });
   };
 
@@ -86,7 +135,7 @@ const Index = () => {
               </div>
               <div>
                 <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                  PPE Detection System
+                  Fire/Smoke & PPE Detection System
                 </h1>
                 <p className="text-sm text-gray-600">Real-time Safety Monitoring Dashboard</p>
               </div>
@@ -111,15 +160,39 @@ const Index = () => {
 
       <main className="container mx-auto px-6 py-8">
         {/* Key Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+          <Card className="bg-gradient-to-r from-red-500 to-red-600 text-white border-0">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-blue-100 text-sm font-medium">Total Violations</p>
-                  <p className="text-3xl font-bold">{stats.totalViolations}</p>
+                  <p className="text-red-100 text-sm font-medium">Fire Detections</p>
+                  <p className="text-3xl font-bold">{stats.fireDetections}</p>
                 </div>
-                <AlertTriangle className="w-8 h-8 text-blue-200" />
+                <Flame className="w-8 h-8 text-red-200" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-r from-gray-500 to-gray-600 text-white border-0">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-100 text-sm font-medium">Smoke Detections</p>
+                  <p className="text-3xl font-bold">{stats.smokeDetections}</p>
+                </div>
+                <AlertTriangle className="w-8 h-8 text-gray-200" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-r from-orange-500 to-orange-600 text-white border-0">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-orange-100 text-sm font-medium">PPE Violations</p>
+                  <p className="text-3xl font-bold">{stats.ppeViolations}</p>
+                </div>
+                <Users className="w-8 h-8 text-orange-200" />
               </div>
             </CardContent>
           </Card>
@@ -132,18 +205,6 @@ const Index = () => {
                   <p className="text-3xl font-bold">{stats.complianceRate}%</p>
                 </div>
                 <TrendingUp className="w-8 h-8 text-green-200" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-r from-orange-500 to-orange-600 text-white border-0">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-orange-100 text-sm font-medium">Helmet Violations</p>
-                  <p className="text-3xl font-bold">{stats.helmetsViolations}</p>
-                </div>
-                <Users className="w-8 h-8 text-orange-200" />
               </div>
             </CardContent>
           </Card>
@@ -167,13 +228,13 @@ const Index = () => {
             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
             <TabsTrigger value="live-feed">Live Feed</TabsTrigger>
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
-            <TabsTrigger value="logs">Violation Logs</TabsTrigger>
+            <TabsTrigger value="logs">Detection Logs</TabsTrigger>
           </TabsList>
 
           <TabsContent value="dashboard" className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <ComplianceMetrics violations={violations} />
-              <ViolationChart violations={violations} />
+              <ComplianceMetrics violations={detections} />
+              <ViolationChart violations={detections} />
             </div>
           </TabsContent>
 
@@ -183,13 +244,13 @@ const Index = () => {
 
           <TabsContent value="analytics">
             <div className="grid grid-cols-1 gap-6">
-              <ViolationChart violations={violations} showDetailed={true} />
-              <ComplianceMetrics violations={violations} showDetailed={true} />
+              <ViolationChart violations={detections} showDetailed={true} />
+              <ComplianceMetrics violations={detections} showDetailed={true} />
             </div>
           </TabsContent>
 
           <TabsContent value="logs">
-            <ViolationLogs violations={violations} />
+            <ViolationLogs violations={detections} />
           </TabsContent>
         </Tabs>
       </main>
